@@ -90,13 +90,13 @@ func main() {
 	users.Methods("GET").HandlerFunc(UserListHandler)
 	users.Methods("POST").HandlerFunc(UserCreateHandler)
 
-	user := r.Path("/admin/user/{id}").Subrouter()
-	user.Methods("GET").HandlerFunc(UserDetailsHandler)
-	user.Methods("PUT").HandlerFunc(UserUpdateHandler)
-	user.Methods("DELETE").HandlerFunc(UserDeleteHandler)
+    user := r.Path("/admin/user/{id}").Subrouter()
+    user.Methods("GET").HandlerFunc(UserDetailsHandler)
+    user.Methods("PUT").HandlerFunc(UserUpdateHandler)
+    user.Methods("DELETE").HandlerFunc(UserDeleteHandler)
 
-	auth := r.Path("/auth/{id}").Subrouter()
-	auth.Methods("GET").HandlerFunc(UserAuthHandler)
+    auth := r.Path("/auth/{id}").Subrouter()
+    auth.Methods("GET").HandlerFunc(UserAuthHandler)
 
 	MyFileInfo.Println("Starting server on :8000")
     http.ListenAndServe(":8000", r)
@@ -182,13 +182,13 @@ func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
 
 	if len(in.Header["X-Auth-Password"]) == 0 {
-		MyFileWarning.Println("Authentication Module - Can't Proceed: Password Missing! User =", id)
+		MyFileWarning.Println("Authentication Module - Can't Proceed: Password Missing! UserId =", id)
 		out.WriteHeader(http.StatusBadRequest) //400 status code
 		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
 	} else {
 		passWord = in.Header["X-Auth-Password"][0]
-		MyFileInfo.Println("A valid password [password hidden] received for user:", id)
+		MyFileInfo.Println("A valid password [password hidden] received for userid:", id)
 		data := []byte(passWord)
     	hash := sha1.Sum(data)
     	sha1hash := string(hash[:])
@@ -330,7 +330,7 @@ func LocateUser(filePath string, tableName string, userName string) int {
 	return -1
 }
 
-func LocatePasswordHash(filePath string, tableName string, userName string) string {
+func LocatePasswordHash(filePath string, tableName string, userId string) string {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
         checkErr(err, 1, db)
@@ -342,9 +342,9 @@ func LocatePasswordHash(filePath string, tableName string, userName string) stri
     	panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	queryStmt := "SELECT password FROM tablename WHERE username='searchterm';"
+	queryStmt := "SELECT password FROM tablename WHERE uid=searchterm;"
     queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
-    queryStmt = strings.Replace(queryStmt, "searchterm", userName, 1)
+    queryStmt = strings.Replace(queryStmt, "searchterm", userId, 1)
     
     MyFileInfo.Println("SQLite3 Query:", queryStmt)
 
@@ -652,15 +652,20 @@ func InitMsgs() {
 	staticMsgs[7] = 
 `
 {
-	"metadata": 
-	{
-		"source": "T-Nova-AuthZ-Service"
-	},
-	"info":
-	[
-		{
-			"msg": "Authentication Successful."
-		}
-	]
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "Authentication Successful."
+        }
+    ],
+    "token":
+    {
+        "id":"uuid-xxx",
+        "valid-until":"2015.06.30-23.59.59"
+    }
 }`
 }
