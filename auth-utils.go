@@ -38,6 +38,11 @@ type user_struct struct {
     AdminFlag string `json:"isadmin"`
 }
 
+type service_struct struct {
+    Shortname string `json:"shortname"`
+    Description string `json:"description"`
+}
+
 var (
 	Trace	*log.Logger
 	Info	*log.Logger
@@ -85,6 +90,10 @@ func main() {
 	
 	tokenval := r.Path("/token/validate/{id}").Subrouter()
     tokenval.Methods("GET").HandlerFunc(TokenValidateHandler)
+	
+	services := r.Path("/admin/service/").Subrouter()
+	services.Methods("GET").HandlerFunc(ServiceListHandler)
+	services.Methods("POST").HandlerFunc(ServiceRegisterHandler)
 
 	MyFileInfo.Println("Starting server on :8000")
     http.ListenAndServe(":8000", r)

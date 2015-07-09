@@ -63,26 +63,21 @@ func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
 			tokenlist, validitylist := GetTokenList("file:foo.db?cache=shared&mode=rwc", "token", id)
 			var buffer1 bytes.Buffer
 			var buffer2 bytes.Buffer
+			runCount := 0
 			for i := 0; i < len(validitylist); i++ {
-				if i == 0 {
-					//check if the token is valid or not
-					unixTimeStr := validitylist[i]
-					x, _ := strconv.ParseInt(unixTimeStr, 10, 64)
-					storedTime := time.Unix(x, 0)
-					if time.Now().Before(storedTime) {
+				//check if the token is valid or not
+				unixTimeStr := validitylist[i]
+				x, _ := strconv.ParseInt(unixTimeStr, 10, 64)
+				storedTime := time.Unix(x, 0)
+				if time.Now().Before(storedTime) {
+					if runCount == 0 {
 						buffer1.WriteString("\"")
 						buffer1.WriteString(tokenlist[i])
 						buffer1.WriteString("\"")
 						buffer2.WriteString("\"")
 						buffer2.WriteString(storedTime.String())
 						buffer2.WriteString("\"")
-					}
-				} else {
-					//check if the token is valid or not
-					unixTimeStr := validitylist[i]
-					x, _ := strconv.ParseInt(unixTimeStr, 10, 64)
-					storedTime := time.Unix(x, 0)
-					if time.Now().Before(storedTime) {
+					} else {
 						buffer1.WriteString(",\"")
 						buffer1.WriteString(tokenlist[i])
 						buffer1.WriteString("\"")
@@ -90,6 +85,9 @@ func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
 						buffer2.WriteString(storedTime.String())
 						buffer2.WriteString("\"")
 					}
+					runCount += 1
+				} else {
+					// these tokens are expired so ignored
 				}
 			}
 			jsonbody = strings.Replace(jsonbody, "uuid-xxx", buffer1.String(), 1)

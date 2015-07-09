@@ -80,7 +80,8 @@ func InitDB(filePath string) {
     			'uid' INTEGER PRIMARY KEY AUTOINCREMENT,
     			'username' VARCHAR(64) NULL,
     			'password' VARCHAR(64) NULL,
-    			'isadmin' VARCHAR(1)
+    			'isadmin' VARCHAR(1),
+				'capability-list' VARCHAR(128)
 				);
     		`
     	stmt, err := db.Prepare(dbCmd)
@@ -99,7 +100,25 @@ func InitDB(filePath string) {
     	checkErr(err, 1, db)
     	res, err = stmt.Exec()
     	checkErr(err, 1, db)
-    	MyFileInfo.Println("Created tables user, token. System ready. System response:", res)
+		dbCmd = `
+    			CREATE TABLE 'service' (
+				'sid' INTEGER PRIMARY KEY AUTOINCREMENT,
+    			'key' VARCHAR(128),
+    			'shortname' VARCHAR(16) NULL,
+    			'description' VARCHAR(128)
+				);
+			`
+		stmt, err = db.Prepare(dbCmd)
+    	checkErr(err, 1, db)
+    	res, err = stmt.Exec()
+    	checkErr(err, 1, db)
+    	MyFileInfo.Println("Created tables user, token, service. System ready. System response:", res)
+		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", "t-nova-admin", "Eq7K8h9gpg", "y", "ALL")
+		if status {
+			MyFileInfo.Println("Status of the attempt to store default admin-user:", "t-nova-admin", "into the table was:", status)
+		} else {
+			MyFileWarning.Println("Status of the attempt to store default admin-user:", "t-nova-admin", "into the table was:", status)
+		}
     }
 }
 

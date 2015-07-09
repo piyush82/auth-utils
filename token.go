@@ -38,15 +38,14 @@ func TokenValidateHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(in)["id"]
 	
-	if (len(in.Header["X-Auth-Token"]) == 0 && len(in.Header["X-Auth-Uid"]) == 0) || len(id) == 0 {
-		MyFileWarning.Println("Token Validation Module - Can't Proceed: Token or UserID Missing!")
+	if (len(in.Header["X-Auth-Service-Key"]) == 0 && len(in.Header["X-Auth-Uid"]) == 0) || len(id) == 0 {
+		MyFileWarning.Println("Token Validation Module - Can't Proceed: Service-Key or UserID Missing!")
 		out.WriteHeader(http.StatusBadRequest) //400 status code
 		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
 	} else {
-		//not handling the token header for now
-		if len(in.Header["X-Auth-Token"]) > 0 {
-			
+		if len(in.Header["X-Auth-Service-Key"]) > 0 {
+			//not handling the service-key header for now
 		} else {
 			userId := in.Header["X-Auth-Uid"][0]
 			//locate validity of token from db
@@ -55,6 +54,7 @@ func TokenValidateHandler(out http.ResponseWriter, in *http.Request) {
 			x, _ := strconv.ParseInt(validity, 10, 64)
 			storedTime := time.Unix(x, 0)
 			MyFileInfo.Println("Result of search for token[", id, "] was: Unix-validity", storedTime.String(), "user-id:", uid)
+			//this matches the uid with the uid associated with the token in question
 			if time.Now().Before(storedTime) && strings.HasPrefix(userId, strconv.Itoa(uid)) && strings.HasSuffix(userId, strconv.Itoa(uid)) {
 				//token is valid
 				out.WriteHeader(http.StatusOK) //200 status code

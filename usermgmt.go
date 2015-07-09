@@ -99,7 +99,7 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
     	} else {
     		//now store the new user in the table and return back the proper response
     		MyFileInfo.Println("Attempting to store new user:", u.Username, "into the table.")
-    		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username, u.Password, u.AdminFlag)
+    		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username, u.Password, u.AdminFlag, "") //inserting empty capability now
     		MyFileInfo.Println("Status of the attempt to store new user:", u.Username, "into the table was:", status)
 
     		out.WriteHeader(http.StatusOK) //200 status code
@@ -184,7 +184,7 @@ func LocateUser(filePath string, tableName string, userName string) int {
 	return -1
 }
 
-func InsertUser(filePath string, tableName string, userName string, passWord string, isAdmin string) bool {
+func InsertUser(filePath string, tableName string, userName string, passWord string, isAdmin string, capability string) bool {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
         checkErr(err, 1, db)
@@ -196,9 +196,10 @@ func InsertUser(filePath string, tableName string, userName string, passWord str
     	panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-    insertStmt := "INSERT INTO tablename VALUES (NULL, 'username', 'passhash', 'isadmin');"
+    insertStmt := "INSERT INTO tablename VALUES (NULL, 'username', 'passhash', 'isadmin', 'capa');"
     insertStmt = strings.Replace(insertStmt, "tablename", tableName, 1)
     insertStmt = strings.Replace(insertStmt, "username", userName, 1)
+	insertStmt = strings.Replace(insertStmt, "capa", capability, 1)
     data := []byte(passWord)
     hash := sha1.Sum(data)
     sha1hash := string(hash[:])

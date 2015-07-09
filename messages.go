@@ -95,6 +95,16 @@ func InitMsgs() {
 				"uri": "/auth/{user-id}",
 				"method": "GET",
 				"purpose": "Authenticate an existing user. OK/Not-OK type response."
+			},
+			{
+				"uri": "/admin/service/",
+				"method": "GET",
+				"purpose": "Lists all registered services."
+			},
+			{
+				"uri": "/admin/service/",
+				"method": "POST",
+				"purpose": "Registers a new service with gatekeeper."
 			}
 		]
 	}
@@ -260,5 +270,60 @@ func InitMsgs() {
             "msg": "Validation Failed."
         }
     ]
+}`
+	staticMsgs[11] = 
+`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "Registered Service List."
+        }
+    ],
+    "servicelist":
+    {
+        "service-key":
+		[
+			uuid-xxx
+		],
+        "shortname":
+		[
+			name-yyy
+		]
+    }
+}`
+	staticMsgs[12] = 
+`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "Service with this shortname already exists."
+		}
+	]
+}`
+	staticMsgs[13] = 
+`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "service registered successfully",
+			"service-uri": "/service/xxx",
+			"service-key": "yyy"
+		}
+	]
 }`
 }
