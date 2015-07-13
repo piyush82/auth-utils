@@ -99,7 +99,7 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
     	} else {
     		//now store the new user in the table and return back the proper response
     		MyFileInfo.Println("Attempting to store new user:", u.Username, "into the table.")
-    		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username, u.Password, u.AdminFlag, "") //inserting empty capability now
+    		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username, u.Password, u.AdminFlag, u.CapabilityList) //inserting capability now
     		MyFileInfo.Println("Status of the attempt to store new user:", u.Username, "into the table was:", status)
 
     		out.WriteHeader(http.StatusOK) //200 status code

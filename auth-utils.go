@@ -36,6 +36,7 @@ type user_struct struct {
     Username string `json:"username"`
     Password string `json:"password"`
     AdminFlag string `json:"isadmin"`
+	CapabilityList string `json:"accesslist"`
 }
 
 type service_struct struct {
