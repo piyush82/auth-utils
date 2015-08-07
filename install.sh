@@ -3,6 +3,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo apt-get install -y gcc
 sudo apt-get install -y git
+sudo apt-get install -y uuid-runtime
 
 cd $HOME
 
