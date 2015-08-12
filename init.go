@@ -81,7 +81,7 @@ func InitDB(filePath string) {
     			'username' VARCHAR(64) NULL,
     			'password' VARCHAR(64) NULL,
     			'isadmin' VARCHAR(1),
-				'capability-list' VARCHAR(128)
+				'capability' VARCHAR(128)
 				);
     		`
     	stmt, err := db.Prepare(dbCmd)
@@ -93,7 +93,7 @@ func InitDB(filePath string) {
     			'uuid' VARCHAR(128) PRIMARY KEY,
     			'uid' INTEGER,
     			'validupto' VARCHAR(64) NULL,
-    			'capability-list' VARCHAR(128)
+    			'capability' VARCHAR(128)
 				);
 			`
 		stmt, err = db.Prepare(dbCmd)

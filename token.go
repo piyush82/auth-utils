@@ -32,6 +32,7 @@ import (
 	"crypto/sha1"
 	"strconv"
 	"time"
+	"encoding/hex"
 )
 
 func TokenValidateHandler(out http.ResponseWriter, in *http.Request) {
@@ -93,7 +94,8 @@ func TokenGenHandler(out http.ResponseWriter, in *http.Request) {
 			userId := in.Header["X-Auth-Uid"][0]
 			data := []byte(passWord)
     		hash := sha1.Sum(data)
-    		sha1hash := string(hash[:])
+    		//sha1hash := string(hash[:])
+			sha1hash := hex.EncodeToString(hash[:])
 			MyFileInfo.Println("TokenGen - SHA-1 Hash Generated for the incoming password:", sha1hash)
     		//get the stored SHA-1 Hash for the incoming user
     		storedHash := LocatePasswordHash("file:foo.db?cache=shared&mode=rwc", "user", userId)

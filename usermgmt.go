@@ -33,16 +33,69 @@ import (
 	"crypto/sha1"
 	"strconv"
 	"bytes"
+	"encoding/hex"
 )
 
 func UserDetailsHandler(out http.ResponseWriter, in *http.Request) {
 	id := mux.Vars(in)["id"]
 	out.Header().Set("Content-Type", "application/json")
-    fmt.Println("Showing details for user", id)
+	userDetail := GetUserDetail("file:foo.db?cache=shared&mode=rwc", "user", id)
+	if userDetail != nil {
+		var jsonbody = staticMsgs[14]
+		jsonbody = strings.Replace(jsonbody, "xxx", userDetail[0], 1)
+		jsonbody = strings.Replace(jsonbody, "yyy", userDetail[1], 1)
+		jsonbody = strings.Replace(jsonbody, "zzz", userDetail[2], 1)
+		out.WriteHeader(http.StatusOK) //200 status code
+		fmt.Fprintln(out, jsonbody)
+	} else {
+		out.WriteHeader(http.StatusNotFound) //404 status code
+		var jsonbody = staticMsgs[15]
+		fmt.Fprintln(out, jsonbody)
+	}
+	
+	MyFileInfo.Println("Received request on URI:/admin/user/{id} GET for uid:", id)
 }
 
 func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
+	id := mux.Vars(in)["id"]
+	decoder := json.NewDecoder(in.Body)
+	var u user_struct   
+    err := decoder.Decode(&u)
 	out.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+    	var jsonbody = staticMsgs[1]
+		fmt.Fprintln(out, jsonbody)
+		MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
+	} else if len(u.AdminFlag) == 0 && len(u.CapabilityList) == 0 {
+		out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+    	var jsonbody = staticMsgs[1]
+		fmt.Fprintln(out, jsonbody)
+		MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
+	} else {
+		status := 0
+		if len(u.CapabilityList) == 0 {
+			//update just the admin-flag
+			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "isadmin", u.AdminFlag, id)
+		} else if len(u.AdminFlag) == 0 {
+			//update just the capability list
+			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "capability", u.CapabilityList, id)
+		} else {
+			//update both the fields
+			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "isadmin", u.AdminFlag, id)
+			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "capability", u.CapabilityList, id)
+		}
+		var jsonbody = ""
+		if status == 1 {
+			jsonbody = staticMsgs[16]
+			out.WriteHeader(http.StatusOK) //200 status code
+		} else {
+			jsonbody = staticMsgs[17]
+			out.WriteHeader(http.StatusNotModified) //304 status code
+		}
+		fmt.Fprintln(out, jsonbody)
+		MyFileInfo.Println("Received request on URI:/admin/user/{id} PUT for uid:", id)
+	}
 }
 
 func UserDeleteHandler(out http.ResponseWriter, in *http.Request) {
@@ -116,6 +169,46 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
     }
 }
 
+func GetUserDetail(filePath string, tableName string, userId string) []string {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+        checkErr(err, 1, db)
+    }
+    defer db.Close()
+    
+    err = db.Ping()
+	if err != nil {
+    	panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	queryStmt := "SELECT username, isadmin, capability FROM tablename WHERE uid=val;"
+	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
+	queryStmt = strings.Replace(queryStmt, "val", userId, 1)
+
+	MyFileInfo.Println("SQLite3 Query:", queryStmt)
+
+	rows, err := db.Query(queryStmt)
+    if err != nil {
+    	MyFileWarning.Println("Caught error in user-detail method.")
+    	checkErr(err, 1, db)
+    }
+    defer rows.Close()
+    var udetail []string
+    if rows.Next() {
+    	var userName string
+		var isAdmin string
+		var capabilityList string
+        err = rows.Scan(&userName, &isAdmin, &capabilityList)
+        checkErr(err, 1, db)
+        udetail = append(udetail, userName)
+		udetail = append(udetail, isAdmin)
+		udetail = append(udetail, capabilityList)
+    } else {
+		udetail = nil
+	}
+    return udetail
+}
+
 func GetUserList(filePath string, tableName string, columnName string) []string {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
@@ -148,6 +241,36 @@ func GetUserList(filePath string, tableName string, columnName string) []string 
         ulist = append(ulist, userName)
     }
     return ulist
+}
+
+func UpdateUser(filePath string, tableName string, columnName string, newValue string, userId string) int {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+        checkErr(err, 1, db)
+    }
+    defer db.Close()
+    
+    err = db.Ping()
+	if err != nil {
+    	panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	queryStmt := "UPDATE table SET column = 'value' WHERE uid=filter;"
+	queryStmt = strings.Replace(queryStmt, "table", tableName, 1)
+	queryStmt = strings.Replace(queryStmt, "column", columnName, 1)
+	queryStmt = strings.Replace(queryStmt, "value", newValue, 1)
+	queryStmt = strings.Replace(queryStmt, "filter", userId, 1)
+	
+	MyFileInfo.Println("SQLite3 Query:", queryStmt)
+	
+	result, err := db.Exec(queryStmt)
+	MyFileInfo.Println("User Update Operation Result for user-id:", userId, "is:", result)
+    if err != nil {
+    	MyFileWarning.Println("Caught error in user-update method.")
+    	checkErr(err, 1, db)
+		return 0
+    } else {
+		return 1
+	}
 }
 
 func LocateUser(filePath string, tableName string, userName string) int {
@@ -202,7 +325,8 @@ func InsertUser(filePath string, tableName string, userName string, passWord str
 	insertStmt = strings.Replace(insertStmt, "capa", capability, 1)
     data := []byte(passWord)
     hash := sha1.Sum(data)
-    sha1hash := string(hash[:])
+	sha1hash := hex.EncodeToString(hash[:])
+    //sha1hash := string(hash[:])
     MyFileInfo.Println("SHA-1 Hash Generated for the incoming password:", sha1hash)
 
     insertStmt = strings.Replace(insertStmt, "passhash", sha1hash, 1)

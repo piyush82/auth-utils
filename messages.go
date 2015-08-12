@@ -119,7 +119,7 @@ func InitMsgs() {
 	"info":
 	[
 		{
-			"msg": "No or corrupt POST data received."
+			"msg": "No or corrupt data received."
 		}
 	]
 }`
@@ -325,5 +325,64 @@ func InitMsgs() {
 			"service-key": "yyy"
 		}
 	]
+}`
+	staticMsgs[14] = 
+`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "Account details.",
+			"username": "xxx",
+			"isadmin": "yyy",
+			"capabilitylist": "zzz"
+		}
+	]
+}`
+	staticMsgs[15] = 
+`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "User not found."
+		}
+	]
+}`
+	staticMsgs[16] = 
+`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "Update Successful."
+        }
+    ]
+}`
+	staticMsgs[17] = 
+`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "Update Failed."
+        }
+    ]
 }`
 }

@@ -34,6 +34,7 @@ import (
 	"time"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+	"encoding/hex"
 )
 
 func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
@@ -51,7 +52,8 @@ func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
 		MyFileInfo.Println("A valid password [password hidden] received for userid:", id)
 		data := []byte(passWord)
     	hash := sha1.Sum(data)
-    	sha1hash := string(hash[:])
+    	//sha1hash := string(hash[:])
+		sha1hash := hex.EncodeToString(hash[:])
     	MyFileInfo.Println("SHA-1 Hash Generated for the incoming password:", sha1hash)
     	//get the stored SHA-1 Hash for the incoming user
     	storedHash := LocatePasswordHash("file:foo.db?cache=shared&mode=rwc", "user", id)
