@@ -51,7 +51,7 @@ func TokenValidateHandler(out http.ResponseWriter, in *http.Request) {
 			userId := in.Header["X-Auth-Uid"][0]
 			//locate validity of token from db
 			MyFileInfo.Println("TokenValidate: Incoming User-ID in header:", userId)
-			validity, uid := LocateTokenValidity("file:foo.db?cache=shared&mode=rwc", "token", id)
+			validity, uid := LocateTokenValidity(dbArg, "token", id)
 			x, _ := strconv.ParseInt(validity, 10, 64)
 			storedTime := time.Unix(x, 0)
 			MyFileInfo.Println("Result of search for token[", id, "] was: Unix-validity", storedTime.String(), "user-id:", uid)
@@ -110,7 +110,7 @@ func TokenGenHandler(out http.ResponseWriter, in *http.Request) {
 				//set the time format
 				//timeValue := validity.Format(time.UnixDate)
 				//fmt.Println(strconv.FormatInt(validity.Unix(), 10))
-				status := InsertToken("file:foo.db?cache=shared&mode=rwc", "token", uuid, userId, strconv.FormatInt(validity.Unix(), 10), "*")
+				status := InsertToken(dbArg, "token", uuid, userId, strconv.FormatInt(validity.Unix(), 10), "*")
     			MyFileInfo.Println("Status of the attempt to store new token:", uuid, "into the table was:", status)
 				out.WriteHeader(http.StatusOK) //200 status code
 				var jsonbody = staticMsgs[8] //user user creation msg, replace with actual content for xxx and yyy

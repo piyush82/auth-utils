@@ -39,7 +39,7 @@ import (
 func UserDetailsHandler(out http.ResponseWriter, in *http.Request) {
 	id := mux.Vars(in)["id"]
 	out.Header().Set("Content-Type", "application/json")
-	userDetail := GetUserDetail("file:foo.db?cache=shared&mode=rwc", "user", id)
+	userDetail := GetUserDetail(dbArg, "user", id)
 	if userDetail != nil {
 		var jsonbody = staticMsgs[14]
 		jsonbody = strings.Replace(jsonbody, "xxx", userDetail[0], 1)
@@ -76,14 +76,14 @@ func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 		status := 0
 		if len(u.CapabilityList) == 0 {
 			//update just the admin-flag
-			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "isadmin", u.AdminFlag, id)
+			status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
 		} else if len(u.AdminFlag) == 0 {
 			//update just the capability list
-			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "capability", u.CapabilityList, id)
+			status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
 		} else {
 			//update both the fields
-			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "isadmin", u.AdminFlag, id)
-			status = UpdateUser("file:foo.db?cache=shared&mode=rwc", "user", "capability", u.CapabilityList, id)
+			status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
+			status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
 		}
 		var jsonbody = ""
 		if status == 1 {
@@ -104,7 +104,7 @@ func UserDeleteHandler(out http.ResponseWriter, in *http.Request) {
 
 func UserListHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
-	userList := GetUserList("file:foo.db?cache=shared&mode=rwc", "user", "username")
+	userList := GetUserList(dbArg, "user", "username")
 	var jsonbody = staticMsgs[4]
 	var buffer bytes.Buffer
 	for i := 0; i < len(userList); i++ {
@@ -143,7 +143,7 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
 		fmt.Fprintln(out, jsonbody)
     } else {
     	MyFileInfo.Println("Received JSON: Struct value received for user [pass hidden]:", u.Username)
-    	userCount := GetCount("file:foo.db?cache=shared&mode=rwc", "user", "username", u.Username)
+		userCount := GetCount(dbArg, "user", "username", u.Username)
     	if userCount > 0 {
     		MyFileInfo.Println("Duplicate user create request on URI:/admin/user/ POST")
     		out.WriteHeader(http.StatusPreconditionFailed)
@@ -152,12 +152,12 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
     	} else {
     		//now store the new user in the table and return back the proper response
     		MyFileInfo.Println("Attempting to store new user:", u.Username, "into the table.")
-    		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username, u.Password, u.AdminFlag, u.CapabilityList) //inserting capability now
+			status := InsertUser(dbArg, "user", u.Username, u.Password, u.AdminFlag, u.CapabilityList) //inserting capability now
     		MyFileInfo.Println("Status of the attempt to store new user:", u.Username, "into the table was:", status)
 
     		out.WriteHeader(http.StatusOK) //200 status code
     		var jsonbody = staticMsgs[3] //user user creation msg, replace with actual content for xxx and yyy
-    		uId := LocateUser("file:foo.db?cache=shared&mode=rwc", "user", u.Username)
+			uId := LocateUser(dbArg, "user", u.Username)
     		MyFileInfo.Println("The new id for user:", u.Username, "is:", uId)
     		//constructing the correct JSON response
     		jsonbody = strings.Replace(jsonbody, "xxx", strconv.Itoa(uId), 1)

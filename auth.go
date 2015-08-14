@@ -62,7 +62,7 @@ func UserAuthHandler(out http.ResponseWriter, in *http.Request) {
     		out.WriteHeader(http.StatusAccepted) //202 status code
     		var jsonbody = staticMsgs[7]
 			//get the list of all valid tokens associated with this user
-			tokenlist, validitylist := GetTokenList("file:foo.db?cache=shared&mode=rwc", "token", id)
+			tokenlist, validitylist := GetTokenList(dbArg, "token", id)
 			var buffer1 bytes.Buffer
 			var buffer2 bytes.Buffer
 			runCount := 0

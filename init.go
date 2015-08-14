@@ -113,11 +113,11 @@ func InitDB(filePath string) {
     	res, err = stmt.Exec()
     	checkErr(err, 1, db)
     	MyFileInfo.Println("Created tables user, token, service. System ready. System response:", res)
-		status := InsertUser("file:foo.db?cache=shared&mode=rwc", "user", "t-nova-admin", "Eq7K8h9gpg", "y", "ALL")
+		status := InsertUser(dbArg, "user", cfg.Tnova.Defaultadmin, cfg.Tnova.Adminpassword, "y", "ALL")
 		if status {
-			MyFileInfo.Println("Status of the attempt to store default admin-user:", "t-nova-admin", "into the table was:", status)
+			MyFileInfo.Println("Status of the attempt to store default admin-user:", cfg.Tnova.Defaultadmin, "into the table was:", status)
 		} else {
-			MyFileWarning.Println("Status of the attempt to store default admin-user:", "t-nova-admin", "into the table was:", status)
+			MyFileWarning.Println("Status of the attempt to store default admin-user:", cfg.Tnova.Defaultadmin, "into the table was:", status)
 		}
     }
 }

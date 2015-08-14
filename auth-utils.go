@@ -30,7 +30,21 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
+	"code.google.com/p/gcfg"
 )
+
+type Config struct {
+	Gatekeeper struct {
+		Port string
+		LogFile string
+		DbFile string
+	}
+	Tnova struct {
+		Defaultadmin string
+		Adminpassword string
+	}
+}
 
 type user_struct struct {
     Username string `json:"username"`
@@ -54,10 +68,17 @@ var (
 	MyFileWarning	*log.Logger
 	MyFileError	*log.Logger
 	staticMsgs [20]string
+	cfg Config
+	dbArg string
 )
 
 func main() {
-	file, err := os.OpenFile("auth-utils.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	err := gcfg.ReadFileInto(&cfg, "gatekeeper.cfg")
+	if err != nil {
+		log.Fatalf("Failed to parse gcfg data: %s", err)
+		os.Exit(1)
+	}
+	file, err := os.OpenFile(cfg.Gatekeeper.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
     	log.Fatalln("Failed to open log file", "auth-utils.log", ":", err)
 	}
@@ -65,12 +86,14 @@ func main() {
 	Initlogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, multi)
 	//logger has been initialized at this point 
 	InitMsgs()
-	dbCheck := CheckDB("file:foo.db?cache=shared&mode=rwc")
+	dbArg = "file:foo.db?cache=shared&mode=rwc"
+	dbArg = strings.Replace(dbArg, "foo.db", cfg.Gatekeeper.DbFile, 1)
+	dbCheck := CheckDB(dbArg)
 
 	if dbCheck {
 		MyFileInfo.Println("Table already exists in DB, nothing to do, proceeding normally.")
 	} else {
-		InitDB("file:foo.db?cache=shared&mode=rwc")
+		InitDB(dbArg)
 	}
 	r := mux.NewRouter().StrictSlash(false)
 	r.HandleFunc("/", HomeHandler)
@@ -95,10 +118,12 @@ func main() {
 	services := r.Path("/admin/service/").Subrouter()
 	services.Methods("GET").HandlerFunc(ServiceListHandler)
 	services.Methods("POST").HandlerFunc(ServiceRegisterHandler)
-
-	MyFileInfo.Println("Starting server on :8000")
-    http.ListenAndServe(":8000", r)
-    MyFileInfo.Println("Stopping server on :8000")
+	
+	portArg := ":port"
+	portArg = strings.Replace(portArg, "port", cfg.Gatekeeper.Port, 1)
+	MyFileInfo.Println("Starting server on", portArg)
+    http.ListenAndServe(portArg, r)
+    MyFileInfo.Println("Stopping server on", portArg)
 }
 
 func HomeHandler(out http.ResponseWriter, in *http.Request) {

@@ -52,7 +52,7 @@ func ServiceRegisterHandler(out http.ResponseWriter, in *http.Request) {
 		fmt.Fprintln(out, jsonbody)
 	} else {
 		MyFileInfo.Println("Received JSON: Struct value received for service [shortname, description]:", s.Shortname, ",", s.Description)
-		serviceCount := GetCount("file:foo.db?cache=shared&mode=rwc", "service", "shortname", s.Shortname)
+		serviceCount := GetCount(dbArg, "service", "shortname", s.Shortname)
 		if serviceCount > 0 {
     		MyFileInfo.Println("Duplicate service create request on URI:/admin/service/ POST")
     		out.WriteHeader(http.StatusPreconditionFailed)
@@ -65,12 +65,12 @@ func ServiceRegisterHandler(out http.ResponseWriter, in *http.Request) {
 			uuid = strings.TrimSpace(uuid)
 			MyFileInfo.Println("Generated a new uuid for the service:", uuid)
 			MyFileInfo.Println("Attempting to store new service:", s.Shortname, "into the table.")
-    		status := InsertService("file:foo.db?cache=shared&mode=rwc", "service", uuid, s.Shortname, s.Description)
+			status := InsertService(dbArg, "service", uuid, s.Shortname, s.Description)
     		MyFileInfo.Println("Status of the attempt to store new service:", s.Shortname, "into the table was:", status)
 
     		out.WriteHeader(http.StatusOK) //200 status code
     		var jsonbody = staticMsgs[13] //service registration msg, replace with actual content for xxx and yyy
-			sId := LocateService("file:foo.db?cache=shared&mode=rwc", "service", uuid)
+			sId := LocateService(dbArg, "service", uuid)
 			MyFileInfo.Println("The new id for service:", s.Shortname, "is:", sId)
 			
     		//constructing the correct JSON response
@@ -85,7 +85,7 @@ func ServiceRegisterHandler(out http.ResponseWriter, in *http.Request) {
 
 func ServiceListHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
-	uuidlist, snamelist := GetServiceList("file:foo.db?cache=shared&mode=rwc", "service")
+	uuidlist, snamelist := GetServiceList(dbArg, "service")
 	var jsonbody = staticMsgs[11]
 	var buffer1 bytes.Buffer
 	var buffer2 bytes.Buffer
