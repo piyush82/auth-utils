@@ -162,6 +162,7 @@ func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
     		//constructing the correct JSON response
     		jsonbody = strings.Replace(jsonbody, "xxx", strconv.Itoa(uId), 1)
     		jsonbody = strings.Replace(jsonbody, "yyy", strconv.Itoa(uId), 1)
+			jsonbody = strings.Replace(jsonbody, "zzz", strconv.Itoa(uId), 1)
 			fmt.Fprintln(out, jsonbody)
     	}
     	

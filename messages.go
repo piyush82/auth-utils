@@ -149,7 +149,8 @@ func InitMsgs() {
 		{
 			"msg": "user created successfully",
 			"auth-uri": "/auth/xxx",
-			"admin-uri": "/admin/user/yyy"
+			"admin-uri": "/admin/user/yyy",
+			"id": "zzz"
 		}
 	]
 }`
