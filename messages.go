@@ -386,4 +386,18 @@ func InitMsgs() {
         }
     ]
 }`
+	staticMsgs[18] = 
+`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "Unauthorized Access."
+        }
+    ]
+}`
 }

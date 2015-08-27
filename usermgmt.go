@@ -39,20 +39,35 @@ import (
 func UserDetailsHandler(out http.ResponseWriter, in *http.Request) {
 	id := mux.Vars(in)["id"]
 	out.Header().Set("Content-Type", "application/json")
-	userDetail := GetUserDetail(dbArg, "user", id)
-	if userDetail != nil {
-		var jsonbody = staticMsgs[14]
-		jsonbody = strings.Replace(jsonbody, "xxx", userDetail[0], 1)
-		jsonbody = strings.Replace(jsonbody, "yyy", userDetail[1], 1)
-		jsonbody = strings.Replace(jsonbody, "zzz", userDetail[2], 1)
-		out.WriteHeader(http.StatusOK) //200 status code
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("User List Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
 	} else {
-		out.WriteHeader(http.StatusNotFound) //404 status code
-		var jsonbody = staticMsgs[15]
-		fmt.Fprintln(out, jsonbody)
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			userDetail := GetUserDetail(dbArg, "user", id)
+			if userDetail != nil {
+				var jsonbody = staticMsgs[14]
+				jsonbody = strings.Replace(jsonbody, "xxx", userDetail[0], 1)
+				jsonbody = strings.Replace(jsonbody, "yyy", userDetail[1], 1)
+				jsonbody = strings.Replace(jsonbody, "zzz", userDetail[2], 1)
+				out.WriteHeader(http.StatusOK) //200 status code
+				fmt.Fprintln(out, jsonbody)
+			} else {
+				out.WriteHeader(http.StatusNotFound) //404 status code
+				var jsonbody = staticMsgs[15]
+				fmt.Fprintln(out, jsonbody)
+			}
+		} else {
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
+		}
 	}
-	
 	MyFileInfo.Println("Received request on URI:/admin/user/{id} GET for uid:", id)
 }
 
@@ -62,40 +77,58 @@ func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 	var u user_struct   
     err := decoder.Decode(&u)
 	out.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
-    	var jsonbody = staticMsgs[1]
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("User List Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
-		MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
-	} else if len(u.AdminFlag) == 0 && len(u.CapabilityList) == 0 {
-		out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
-    	var jsonbody = staticMsgs[1]
-		fmt.Fprintln(out, jsonbody)
-		MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
 	} else {
-		status := 0
-		if len(u.CapabilityList) == 0 {
-			//update just the admin-flag
-			status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
-		} else if len(u.AdminFlag) == 0 {
-			//update just the capability list
-			status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			if err != nil {
+				out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+    			var jsonbody = staticMsgs[1]
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
+			} else if len(u.AdminFlag) == 0 && len(u.CapabilityList) == 0 {
+				out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+    			var jsonbody = staticMsgs[1]
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
+			} else {
+				status := 0
+				if len(u.CapabilityList) == 0 {
+					//update just the admin-flag
+					status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
+				} else if len(u.AdminFlag) == 0 {
+					//update just the capability list
+					status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
+				} else {
+					//update both the fields
+					status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
+					status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
+				}
+				var jsonbody = ""
+				if status == 1 {
+					jsonbody = staticMsgs[16]
+					out.WriteHeader(http.StatusOK) //200 status code
+				} else {
+					jsonbody = staticMsgs[17]
+					out.WriteHeader(http.StatusNotModified) //304 status code
+				}
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received request on URI:/admin/user/{id} PUT for uid:", id)
+			}
 		} else {
-			//update both the fields
-			status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
-			status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
+			MyFileInfo.Println("Received unauthorized request on URI:/admin/user/{id} PUT for uid:", id)
 		}
-		var jsonbody = ""
-		if status == 1 {
-			jsonbody = staticMsgs[16]
-			out.WriteHeader(http.StatusOK) //200 status code
-		} else {
-			jsonbody = staticMsgs[17]
-			out.WriteHeader(http.StatusNotModified) //304 status code
-		}
-		fmt.Fprintln(out, jsonbody)
-		MyFileInfo.Println("Received request on URI:/admin/user/{id} PUT for uid:", id)
 	}
+	
 }
 
 func UserDeleteHandler(out http.ResponseWriter, in *http.Request) {
@@ -104,70 +137,102 @@ func UserDeleteHandler(out http.ResponseWriter, in *http.Request) {
 
 func UserListHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
-	userList := GetUserList(dbArg, "user", "username")
-	var jsonbody = staticMsgs[4]
-	var buffer bytes.Buffer
-	for i := 0; i < len(userList); i++ {
-		if i == 0 {
-			buffer.WriteString("\"")
-			buffer.WriteString(userList[i])
-			buffer.WriteString("\"")
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("User List Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
+		fmt.Fprintln(out, jsonbody)
+	} else {
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			userList := GetUserList(dbArg, "user", "username")
+			var jsonbody = staticMsgs[4]
+			var buffer bytes.Buffer
+			for i := 0; i < len(userList); i++ {
+				if i == 0 {
+					buffer.WriteString("\"")
+					buffer.WriteString(userList[i])
+					buffer.WriteString("\"")
+				} else {
+					buffer.WriteString(",\"")
+					buffer.WriteString(userList[i])
+					buffer.WriteString("\"")
+				}
+			}
+			jsonbody = strings.Replace(jsonbody, "xxx", buffer.String(), 1)
+			out.WriteHeader(http.StatusOK) //200 status code
+			fmt.Fprintln(out, jsonbody)
 		} else {
-			buffer.WriteString(",\"")
-			buffer.WriteString(userList[i])
-			buffer.WriteString("\"")
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
 		}
 	}
-	jsonbody = strings.Replace(jsonbody, "xxx", buffer.String(), 1)
-	out.WriteHeader(http.StatusOK) //200 status code
-	fmt.Fprintln(out, jsonbody)
+	
 	MyFileInfo.Println("Received request on URI:/admin/user/ GET")
 }
 
 func UserCreateHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
-	decoder := json.NewDecoder(in.Body)
-	var u user_struct   
-    err := decoder.Decode(&u)
-
-    if err != nil {
-    	out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
-    	var jsonbody = staticMsgs[1]
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("User Create Module - Can't Proceed: X-Auth-Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
-		MyFileInfo.Println("Received malformed request on URI:/admin/user/ POST")
-        panic(err)
-    } else if len(u.Username) == 0 {
-    	MyFileInfo.Println("Received malformed request on URI:/admin/user/ POST")
-    	out.WriteHeader(http.StatusBadRequest)
-    	var jsonbody = staticMsgs[1] //status 400 Bad Request
-		fmt.Fprintln(out, jsonbody)
-    } else {
-    	MyFileInfo.Println("Received JSON: Struct value received for user [pass hidden]:", u.Username)
-		userCount := GetCount(dbArg, "user", "username", u.Username)
-    	if userCount > 0 {
-    		MyFileInfo.Println("Duplicate user create request on URI:/admin/user/ POST")
-    		out.WriteHeader(http.StatusPreconditionFailed)
-    		var jsonbody = staticMsgs[2] //user already exists
-			fmt.Fprintln(out, jsonbody)
-    	} else {
-    		//now store the new user in the table and return back the proper response
-    		MyFileInfo.Println("Attempting to store new user:", u.Username, "into the table.")
-			status := InsertUser(dbArg, "user", u.Username, u.Password, u.AdminFlag, u.CapabilityList) //inserting capability now
-    		MyFileInfo.Println("Status of the attempt to store new user:", u.Username, "into the table was:", status)
+	} else {
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			decoder := json.NewDecoder(in.Body)
+			var u user_struct   
+    		err := decoder.Decode(&u)
 
-    		out.WriteHeader(http.StatusOK) //200 status code
-    		var jsonbody = staticMsgs[3] //user user creation msg, replace with actual content for xxx and yyy
-			uId := LocateUser(dbArg, "user", u.Username)
-    		MyFileInfo.Println("The new id for user:", u.Username, "is:", uId)
-    		//constructing the correct JSON response
-    		jsonbody = strings.Replace(jsonbody, "xxx", strconv.Itoa(uId), 1)
-    		jsonbody = strings.Replace(jsonbody, "yyy", strconv.Itoa(uId), 1)
-			jsonbody = strings.Replace(jsonbody, "zzz", strconv.Itoa(uId), 1)
+    		if err != nil {
+    			out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+    			var jsonbody = staticMsgs[1]
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received malformed request on URI:/admin/user/ POST")
+    		    panic(err)
+    		} else if len(u.Username) == 0 {
+    			MyFileInfo.Println("Received malformed request on URI:/admin/user/ POST")
+    			out.WriteHeader(http.StatusBadRequest)
+    			var jsonbody = staticMsgs[1] //status 400 Bad Request
+				fmt.Fprintln(out, jsonbody)
+    		} else {
+    			MyFileInfo.Println("Received JSON: Struct value received for user [pass hidden]:", u.Username)
+				userCount := GetCount(dbArg, "user", "username", u.Username)
+    			if userCount > 0 {
+    				MyFileInfo.Println("Duplicate user create request on URI:/admin/user/ POST")
+    				out.WriteHeader(http.StatusPreconditionFailed)
+    				var jsonbody = staticMsgs[2] //user already exists
+					fmt.Fprintln(out, jsonbody)
+    			} else {
+    				//now store the new user in the table and return back the proper response
+    				MyFileInfo.Println("Attempting to store new user:", u.Username, "into the table.")
+					status := InsertUser(dbArg, "user", u.Username, u.Password, u.AdminFlag, u.CapabilityList) //inserting capability now
+    				MyFileInfo.Println("Status of the attempt to store new user:", u.Username, "into the table was:", status)
+
+    				out.WriteHeader(http.StatusOK) //200 status code
+    				var jsonbody = staticMsgs[3] //user user creation msg, replace with actual content for xxx and yyy
+					uId := LocateUser(dbArg, "user", u.Username)
+    				MyFileInfo.Println("The new id for user:", u.Username, "is:", uId)
+    				//constructing the correct JSON response
+    				jsonbody = strings.Replace(jsonbody, "xxx", strconv.Itoa(uId), 1)
+    				jsonbody = strings.Replace(jsonbody, "yyy", strconv.Itoa(uId), 1)
+					jsonbody = strings.Replace(jsonbody, "zzz", strconv.Itoa(uId), 1)
+					fmt.Fprintln(out, jsonbody)
+    			}    	
+		    }			
+		} else {
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
 			fmt.Fprintln(out, jsonbody)
-    	}
-    	
-		MyFileInfo.Println("Received request on URI:/admin/user/ POST")
-    }
+		}
+	}
+	MyFileInfo.Println("Received request on URI:/admin/user/ POST")
 }
 
 func GetUserDetail(filePath string, tableName string, userId string) []string {

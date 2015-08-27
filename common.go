@@ -26,6 +26,8 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
+	"strconv"
+	"time"
 	"log"
 	"os/exec" //for calling system call uuidgen
 )
@@ -62,6 +64,35 @@ func GetCount(filePath string, tableName string, columnName string, searchTerm s
         return userCount
     }
 	return 1
+}
+
+func CheckTokenAdmin(token string) bool {
+	validity, uid := LocateTokenValidity(dbArg, "token", token)
+	x, _ := strconv.ParseInt(validity, 10, 64)
+	storedTime := time.Unix(x, 0)
+	MyFileInfo.Println("Result of search for token[", token, "] was: Unix-validity", storedTime.String(), " for retrieved user-id:", uid)
+	if time.Now().Before(storedTime) {
+		//check if uid is an admin
+		userDetail := GetUserDetail(dbArg, "user", strconv.Itoa(uid))
+		if userDetail != nil {
+			isAdmin := userDetail[1]
+			if strings.HasPrefix(isAdmin, "y") && strings.HasSuffix(isAdmin, "y") {
+				MyFileInfo.Println("Result of admin check for [", token, "] was: true.")
+				return true
+			} else {
+				//not an admin
+				MyFileInfo.Println("Result of admin check for [", token, "] was: false.")
+				return false
+			}
+		} else {
+			MyFileInfo.Println("Result of admin check for [", token, "] was: false. User details not found!")
+			return false
+		}
+	} else {
+		//expired token
+		MyFileInfo.Println("Result of admin check for [", token, "] was: false. Token was expired or invalid!")
+		return false
+	}
 }
 
 func genuuid() string {
