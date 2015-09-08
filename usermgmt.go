@@ -408,6 +408,12 @@ func CheckUserAccess(filePath string, tableName string, uid string, shortcode st
 			if strings.HasPrefix(services[i], shortcode) && strings.HasSuffix(services[i], shortcode) {
 				located = true
 			}
+			if strings.HasPrefix(services[i], "ALL") && strings.HasSuffix(services[i], "ALL") {
+				located = true
+			}
+			if strings.HasPrefix(services[i], "*") && strings.HasSuffix(services[i], "*") {
+				located = true
+			}
 		}
 		if located {
 			return true
