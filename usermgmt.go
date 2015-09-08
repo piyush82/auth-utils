@@ -373,6 +373,49 @@ func LocateUser(filePath string, tableName string, userName string) int {
 	return -1
 }
 
+func CheckUserAccess(filePath string, tableName string, uid string, shortcode string) bool {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+        checkErr(err, 1, db)
+    }
+    defer db.Close()
+    
+    err = db.Ping()
+	if err != nil {
+    	panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	
+	queryStmt := "SELECT capability FROM tablename WHERE uid=searchterm;"
+    queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
+    queryStmt = strings.Replace(queryStmt, "searchterm", uid, 1)
+	
+	MyFileInfo.Println("SQLite3 Query:", queryStmt)
+
+	rows, err := db.Query(queryStmt)
+    if err != nil {
+    	MyFileWarning.Println("Caught error in check-user-access method.")
+    	checkErr(err, 1, db)
+    }
+    defer rows.Close()
+    if rows.Next() {
+    	var accessList string
+        err = rows.Scan(&accessList)
+        checkErr(err, 1, db)
+        MyFileInfo.Println("Found access-list for user [uid:", uid, "]: ", accessList)
+		services := strings.Split(accessList, ",")
+		located := false
+		for i := 0; i < len(services); i++ {
+			if strings.HasPrefix(services[i], shortcode) && strings.HasSuffix(services[i], shortcode) {
+				located = true
+			}
+		}
+		if located {
+			return true
+		}
+    }
+	return false
+}
+
 func InsertUser(filePath string, tableName string, userName string, passWord string, isAdmin string, capability string) bool {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {

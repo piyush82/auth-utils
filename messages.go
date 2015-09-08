@@ -254,7 +254,7 @@ func InitMsgs() {
     "info":
     [
         {
-            "msg": "Validation Successful."
+            "msg": "Validation / Authorization Successful."
         }
     ]
 }`
@@ -268,7 +268,7 @@ func InitMsgs() {
     "info":
     [
         {
-            "msg": "Validation Failed."
+            "msg": "Validation / Authorization Failed."
         }
     ]
 }`

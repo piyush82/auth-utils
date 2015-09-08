@@ -244,3 +244,37 @@ func LocateService(filePath string, tableName string, uuid string) int {
     
 	return -1
 }
+
+func LocateServiceCode(filePath string, tableName string, uuId string) string {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+        checkErr(err, 1, db)
+    }
+    defer db.Close()
+    
+    err = db.Ping()
+	if err != nil {
+    	panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	queryStmt := "SELECT shortname FROM tablename WHERE key='searchterm';"
+    queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
+    queryStmt = strings.Replace(queryStmt, "searchterm", uuId, 1)
+    
+    MyFileInfo.Println("SQLite3 Query:", queryStmt)
+
+	rows, err := db.Query(queryStmt)
+    if err != nil {
+    	MyFileWarning.Println("Caught error in locate-service-code method.")
+    	checkErr(err, 1, db)
+    }
+    defer rows.Close()
+    if rows.Next() {
+    	var shortcode string
+        err = rows.Scan(&shortcode)
+        checkErr(err, 1, db)
+        return shortcode
+    }
+    
+	return ""
+}

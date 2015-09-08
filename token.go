@@ -47,6 +47,52 @@ func TokenValidateHandler(out http.ResponseWriter, in *http.Request) {
 	} else {
 		if len(in.Header["X-Auth-Service-Key"]) > 0 {
 			//not handling the service-key header for now
+			serviceKey := in.Header["X-Auth-Service-Key"][0]
+			MyFileInfo.Println("Received token authorization request for service key[", serviceKey, "] against token [", id, "]")
+			//get user id from this token
+			validity, uid := LocateTokenValidity(dbArg, "token", id)
+			x, _ := strconv.ParseInt(validity, 10, 64)
+			storedTime := time.Unix(x, 0)
+			MyFileInfo.Println("Result of search for token[", id, "] was: Unix-validity", storedTime.String(), "user-id:", uid)
+			if time.Now().Before(storedTime) {
+				//token is valid, now check if the token is authorized
+				//locate service short code now
+				shortCode := LocateServiceCode(dbArg, "service", serviceKey)
+				if len(shortCode) > 0 {
+					MyFileInfo.Println("For service-key [", serviceKey, "]: short-code found: [", shortCode, "]")
+					//now check if uid is allowed to access this service
+					hasAccess := CheckUserAccess(dbArg, "user", strconv.Itoa(uid), shortCode)
+					if hasAccess {
+						MyFileInfo.Println("Token authorization result for service key[", serviceKey, "] against token [", id, "] was: true.")
+						out.WriteHeader(http.StatusOK) //200 status code
+						var jsonbody = staticMsgs[9] //token is valid
+    					//constructing the correct JSON response
+						fmt.Fprintln(out, jsonbody)
+					} else {
+						MyFileInfo.Println("Token authorization result for service key[", serviceKey, "] against token [", id, "] was: false.")
+						//token is not authorized for this service
+						out.WriteHeader(http.StatusNotAcceptable) //406 status code
+						var jsonbody = staticMsgs[10] //validation failed msg
+    					//constructing the correct JSON response
+						fmt.Fprintln(out, jsonbody)
+					}
+					
+				} else {
+					//no such service found
+					out.WriteHeader(http.StatusNotAcceptable) //406 status code
+					var jsonbody = staticMsgs[10] //validation failed msg
+    				//constructing the correct JSON response
+					MyFileInfo.Println("Validation result for token: ", id, "was - unauthorized. No such service found.")
+					fmt.Fprintln(out, jsonbody)
+				}
+			} else {
+				//token is invalid
+				out.WriteHeader(http.StatusNotAcceptable) //406 status code
+				var jsonbody = staticMsgs[10] //validation failed msg
+    			//constructing the correct JSON response
+				MyFileInfo.Println("Validation result for token: ", id, "was - invalid. Token was expired.")
+				fmt.Fprintln(out, jsonbody)
+			}
 		} else {
 			userId := in.Header["X-Auth-Uid"][0]
 			//locate validity of token from db
