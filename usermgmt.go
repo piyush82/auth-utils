@@ -29,11 +29,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/gorilla/mux"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func UserDetailsHandler(out http.ResponseWriter, in *http.Request) {
@@ -78,7 +79,7 @@ func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 	err := decoder.Decode(&u)
 	out.Header().Set("Content-Type", "application/json")
 	if len(in.Header["X-Auth-Token"]) == 0 {
-		MyFileWarning.Println("User List Module - Can't Proceed: Token Missing!")
+		MyFileWarning.Println("User Update Module - Can't Proceed: Token Missing!")
 		out.WriteHeader(http.StatusBadRequest) //400 status code
 		var jsonbody = staticMsgs[5]
 		fmt.Fprintln(out, jsonbody)
@@ -133,6 +134,38 @@ func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 
 func UserDeleteHandler(out http.ResponseWriter, in *http.Request) {
 	out.Header().Set("Content-Type", "application/json")
+	id := mux.Vars(in)["id"]
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("User Delete Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
+		fmt.Fprintln(out, jsonbody)
+	} else {
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			//now delete this user from the table
+			MyFileInfo.Println("Attempting to delete userid:", id, "from the table.")
+			status := DeleteUser(dbArg, "user", id)
+			MyFileInfo.Println("Status of the attempt to delete existing userid:", id, "from the table was:", status)
+			if status == 1 {
+				out.WriteHeader(http.StatusOK) //200 status code
+				var jsonbody = staticMsgs[23]  //user deletion msg
+				fmt.Fprintln(out, jsonbody)
+			} else {
+				out.WriteHeader(http.StatusInternalServerError) //500 status code
+				var jsonbody = staticMsgs[24]
+				fmt.Fprintln(out, jsonbody) //user deletion failed msg
+			}
+		} else {
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
+			MyFileInfo.Println("Received unauthorized request on URI:/admin/user/{id} PUT for uid:", id)
+		}
+	}
+	MyFileInfo.Println("Received request on URI:/admin/user/{id} DELETE")
 }
 
 func UserListHandler(out http.ResponseWriter, in *http.Request) {
@@ -371,6 +404,33 @@ func LocateUser(filePath string, tableName string, userName string) int {
 	}
 
 	return -1
+}
+
+func DeleteUser(filePath string, tableName string, userId string) int {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+		checkErr(err, 1, db)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	queryStmt := "DELETE FROM tablename WHERE uid=searchterm;"
+	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
+	queryStmt = strings.Replace(queryStmt, "searchterm", userId, 1)
+
+	MyFileInfo.Println("SQLite3 Query:", queryStmt)
+
+	_, err = db.Exec(queryStmt)
+	if err != nil {
+		MyFileWarning.Println("Caught error in user-delete method.")
+		checkErr(err, 1, db)
+		return 0
+	}
+	return 1
 }
 
 func CheckUserAccess(filePath string, tableName string, uid string, shortcode string) bool {

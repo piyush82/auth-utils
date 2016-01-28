@@ -24,12 +24,13 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os/exec" //for calling system call uuidgen
 	"strconv"
 	"strings"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func GetCount(filePath string, tableName string, columnName string, searchTerm string) int {
@@ -58,10 +59,10 @@ func GetCount(filePath string, tableName string, columnName string, searchTerm s
 	}
 	defer rows.Close()
 	if rows.Next() {
-		var userCount int
-		err = rows.Scan(&userCount)
+		var xcount int
+		err = rows.Scan(&xcount)
 		checkErr(err, 1, db)
-		return userCount
+		return xcount
 	}
 	return 1
 }

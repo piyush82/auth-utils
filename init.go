@@ -24,10 +24,11 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"io"
 	"log"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func CheckDB(filePath string) bool {
@@ -112,7 +113,20 @@ func InitDB(filePath string) {
 		checkErr(err, 1, db)
 		res, err = stmt.Exec()
 		checkErr(err, 1, db)
-		MyFileInfo.Println("Created tables user, token, service. System ready. System response:", res)
+		dbCmd = `
+    			CREATE TABLE 'dcdata' (
+				'did' INTEGER PRIMARY KEY AUTOINCREMENT,
+    			'dcname' VARCHAR(128),
+    			'adminid' VARCHAR(16),
+    			'password' VARCHAR(128),
+				'xtrainfo' VARCHAR(1024) NULL
+				);
+			`
+		stmt, err = db.Prepare(dbCmd)
+		checkErr(err, 1, db)
+		res, err = stmt.Exec()
+		checkErr(err, 1, db)
+		MyFileInfo.Println("Created tables user, token, service, dcdata. System ready. System response:", res)
 		status := InsertUser(dbArg, "user", cfg.Tnova.Defaultadmin, cfg.Tnova.Adminpassword, "y", "ALL")
 		if status {
 			MyFileInfo.Println("Status of the attempt to store default admin-user:", cfg.Tnova.Defaultadmin, "into the table was:", status)

@@ -400,4 +400,104 @@ func InitMsgs() {
         }
     ]
 }`
+
+	staticMsgs[19] =
+		`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "list of registere datacenters"
+		}
+	],
+	"dclist":
+	[
+		xxx
+	]
+}`
+
+	staticMsgs[20] =
+		`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "Datacenter already exists."
+		}
+	]
+}`
+
+	staticMsgs[21] =
+		`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "datacenter data stored successfully",
+			"admin-uri": "/admin/dc/yyy",
+			"id": "zzz"
+		}
+	]
+}`
+
+	staticMsgs[22] =
+		`
+{
+	"metadata": 
+	{
+		"source": "T-Nova-AuthZ-Service"
+	},
+	"info":
+	[
+		{
+			"msg": "Datacenter details.",
+			"dcname": "xxx",
+			"adminuser": "yyy",
+			"password": "zzz",
+			"extrainfo": "aaa"
+		}
+	]
+}`
+
+	staticMsgs[23] =
+		`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "User account deleted successfully."
+        }
+    ]
+}`
+
+	staticMsgs[24] =
+		`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "User Delete Failed."
+        }
+    ]
+}`
 }
