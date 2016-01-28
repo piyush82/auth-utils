@@ -23,15 +23,15 @@
 package main
 
 import (
-	"github.com/scalingdata/gcfg"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"github.com/scalingdata/gcfg"
+	"github.com/gorilla/mux"
 )
 
 type Config struct {
@@ -53,6 +53,13 @@ type user_struct struct {
 	CapabilityList string `json:"accesslist"`
 }
 
+type dc_struct struct {
+	Dcname    string `json:"dcname"`
+	AdminId   string `json:"adminid"`
+	Password  string `json:"password"`
+	ExtraInfo string `json:"extrainfo"`
+}
+
 type service_struct struct {
 	Shortname   string `json:"shortname"`
 	Description string `json:"description"`
@@ -67,7 +74,7 @@ var (
 	MyFileInfo    *log.Logger
 	MyFileWarning *log.Logger
 	MyFileError   *log.Logger
-	staticMsgs    [20]string
+	staticMsgs    [25]string
 	cfg           Config
 	dbArg         string
 )
@@ -118,6 +125,15 @@ func main() {
 	services := r.Path("/admin/service/").Subrouter()
 	services.Methods("GET").HandlerFunc(ServiceListHandler)
 	services.Methods("POST").HandlerFunc(ServiceRegisterHandler)
+
+	dclist := r.Path("/admin/dc/").Subrouter()
+	dclist.Methods("GET").HandlerFunc(DcListHandler)
+	dclist.Methods("POST").HandlerFunc(DcCreateHandler)
+
+	dc := r.Path("/admin/dc/{id}").Subrouter()
+	dc.Methods("GET").HandlerFunc(DcDetailsHandler)
+	dc.Methods("PUT").HandlerFunc(DcUpdateHandler)
+	dc.Methods("DELETE").HandlerFunc(DcDeleteHandler)
 
 	portArg := ":port"
 	portArg = strings.Replace(portArg, "port", cfg.Gatekeeper.Port, 1)
