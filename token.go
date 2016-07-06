@@ -259,6 +259,7 @@ func InsertToken(filePath string, tableName string, uuid string, uid string, val
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
+
 	insertStmt := "INSERT INTO tablename VALUES ('uuid', uid, 'validto', 'capability');"
 	insertStmt = strings.Replace(insertStmt, "tablename", tableName, 1)
 	insertStmt = strings.Replace(insertStmt, "uuid", uuid, 1)
@@ -271,6 +272,35 @@ func InsertToken(filePath string, tableName string, uuid string, uid string, val
 	res, err := db.Exec(insertStmt)
 	if err != nil {
 		MyFileWarning.Println("Caught error in insert-token method,", res)
+		checkErr(err, 1, db)
+	}
+
+	CleanTokenDB(filePath, tableName)
+	return true
+}
+
+func CleanTokenDB(filePath string, tableName string) bool {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+		checkErr(err, 1, db)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	cleanStmt := "DELETE FROM tablename WHERE validupto < time;"
+	cleanStmt = strings.Replace(cleanStmt, "tablename", tableName, 1)
+	now := strconv.FormatInt(time.Now().Unix(), 10)
+	cleanStmt = strings.Replace(cleanStmt, "time", now, 1)
+
+	MyFileInfo.Println("SQLite3 Query:", cleanStmt)
+
+	res, err := db.Exec(cleanStmt)
+	if err != nil {
+		MyFileWarning.Println("Caught error in clean-token-db method,", res)
 		checkErr(err, 1, db)
 	}
 
