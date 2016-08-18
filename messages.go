@@ -170,6 +170,10 @@ func InitMsgs() {
 	"userlist":
 	[
 		xxx
+	],
+	"userids":
+	[
+		yyy
 	]
 }`
 	staticMsgs[5] =

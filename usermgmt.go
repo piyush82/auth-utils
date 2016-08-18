@@ -180,21 +180,29 @@ func UserListHandler(out http.ResponseWriter, in *http.Request) {
 		//check if token is valid and belongs to an admin user
 		isAdmin := CheckTokenAdmin(token)
 		if isAdmin {
-			userList := GetUserList(dbArg, "user", "username")
+			userList, userIdlist := GetUserList(dbArg, "user", "username")
 			var jsonbody = staticMsgs[4]
-			var buffer bytes.Buffer
+			var buffer1 bytes.Buffer
+			var buffer2 bytes.Buffer
 			for i := 0; i < len(userList); i++ {
 				if i == 0 {
-					buffer.WriteString("\"")
-					buffer.WriteString(userList[i])
-					buffer.WriteString("\"")
+					buffer1.WriteString("\"")
+					buffer1.WriteString(userList[i])
+					buffer1.WriteString("\"")
+					buffer2.WriteString("\"")
+					buffer2.WriteString(userIdlist[i])
+					buffer2.WriteString("\"")
 				} else {
-					buffer.WriteString(",\"")
-					buffer.WriteString(userList[i])
-					buffer.WriteString("\"")
+					buffer1.WriteString(",\"")
+					buffer1.WriteString(userList[i])
+					buffer1.WriteString("\"")
+					buffer2.WriteString(",\"")
+					buffer2.WriteString(userIdlist[i])
+					buffer2.WriteString("\"")
 				}
 			}
-			jsonbody = strings.Replace(jsonbody, "xxx", buffer.String(), 1)
+			jsonbody = strings.Replace(jsonbody, "xxx", buffer1.String(), 1)
+			jsonbody = strings.Replace(jsonbody, "yyy", buffer2.String(), 1)
 			out.WriteHeader(http.StatusOK) //200 status code
 			fmt.Fprintln(out, jsonbody)
 		} else {
@@ -308,7 +316,7 @@ func GetUserDetail(filePath string, tableName string, userId string) []string {
 	return udetail
 }
 
-func GetUserList(filePath string, tableName string, columnName string) []string {
+func GetUserList(filePath string, tableName string, columnName string) ([]string, []string) {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
 		checkErr(err, 1, db)
@@ -320,7 +328,7 @@ func GetUserList(filePath string, tableName string, columnName string) []string 
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	queryStmt := "SELECT column FROM tablename;"
+	queryStmt := "SELECT uid, column FROM tablename;"
 	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
 	queryStmt = strings.Replace(queryStmt, "column", columnName, 1)
 
@@ -333,13 +341,16 @@ func GetUserList(filePath string, tableName string, columnName string) []string 
 	}
 	defer rows.Close()
 	var ulist []string
+	var uid []string
 	for rows.Next() {
 		var userName string
-		err = rows.Scan(&userName)
+		var userId string
+		err = rows.Scan(&userId, &userName)
 		checkErr(err, 1, db)
 		ulist = append(ulist, userName)
+		uid = append(uid, userId)
 	}
-	return ulist
+	return ulist, uid
 }
 
 func UpdateUser(filePath string, tableName string, columnName string, newValue string, userId string) int {
