@@ -111,10 +111,11 @@ func ServiceListHandler(out http.ResponseWriter, in *http.Request) {
 		//check if token is valid and belongs to an admin user
 		isAdmin := CheckTokenAdmin(token)
 		if isAdmin {
-			uuidlist, snamelist := GetServiceList(dbArg, "service")
+			uuidlist, snamelist, sidlist := GetServiceList(dbArg, "service")
 			var jsonbody = staticMsgs[11]
 			var buffer1 bytes.Buffer
 			var buffer2 bytes.Buffer
+			var buffer3 bytes.Buffer
 
 			for i := 0; i < len(uuidlist); i++ {
 				if i == 0 {
@@ -124,6 +125,9 @@ func ServiceListHandler(out http.ResponseWriter, in *http.Request) {
 					buffer2.WriteString("\"")
 					buffer2.WriteString(snamelist[i])
 					buffer2.WriteString("\"")
+					buffer3.WriteString("\"")
+					buffer3.WriteString(sidlist[i])
+					buffer3.WriteString("\"")
 				} else {
 					buffer1.WriteString(",\"")
 					buffer1.WriteString(uuidlist[i])
@@ -131,10 +135,14 @@ func ServiceListHandler(out http.ResponseWriter, in *http.Request) {
 					buffer2.WriteString(",\"")
 					buffer2.WriteString(snamelist[i])
 					buffer2.WriteString("\"")
+					buffer3.WriteString(",\"")
+					buffer3.WriteString(sidlist[i])
+					buffer3.WriteString("\"")
 				}
 			}
 			jsonbody = strings.Replace(jsonbody, "uuid-xxx", buffer1.String(), 1)
 			jsonbody = strings.Replace(jsonbody, "name-yyy", buffer2.String(), 1)
+			jsonbody = strings.Replace(jsonbody, "id-zzz", buffer3.String(), 1)
 			out.WriteHeader(http.StatusOK) //200 status code
 			fmt.Fprintln(out, jsonbody)
 		} else {
@@ -147,7 +155,7 @@ func ServiceListHandler(out http.ResponseWriter, in *http.Request) {
 	MyFileInfo.Println("Received request on URI:/admin/service/ GET")
 }
 
-func GetServiceList(filePath string, tableName string) ([]string, []string) {
+func GetServiceList(filePath string, tableName string) ([]string, []string, []string) {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
 		checkErr(err, 1, db)
@@ -159,7 +167,7 @@ func GetServiceList(filePath string, tableName string) ([]string, []string) {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	queryStmt := "SELECT key, shortname FROM tablename;"
+	queryStmt := "SELECT sid, key, shortname FROM tablename;"
 	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
 
 	MyFileInfo.Println("SQLite3 Query:", queryStmt)
@@ -170,17 +178,20 @@ func GetServiceList(filePath string, tableName string) ([]string, []string) {
 		checkErr(err, 1, db)
 	}
 	defer rows.Close()
+	var sidlist []string
 	var uuidlist []string
 	var namelist []string
 	for rows.Next() {
 		var suuid string
 		var sname string
-		err = rows.Scan(&suuid, &sname)
+		var sid string
+		err = rows.Scan(&sid, &suuid, &sname)
 		checkErr(err, 1, db)
 		uuidlist = append(uuidlist, suuid)
 		namelist = append(namelist, sname)
+		sidlist = append(sidlist, sid)
 	}
-	return uuidlist, namelist
+	return uuidlist, namelist, sidlist
 }
 
 func InsertService(filePath string, tableName string, serviceUuid string, serviceName string, serviceDesc string) bool {

@@ -298,6 +298,10 @@ func InitMsgs() {
         "shortname":
 		[
 			name-yyy
+		],
+	"id":
+		[
+			id-zzz
 		]
     }
 }`
