@@ -501,3 +501,35 @@ func InitMsgs() {
     ]
 }`
 }
+
+staticMsgs[25] =
+		`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "DC deleted successfully."
+        }
+    ]
+}`
+}
+
+staticMsgs[26] =
+		`
+{
+    "metadata":
+    {
+        "source": "T-Nova-AuthZ-Service"
+    },
+    "info":
+    [
+        {
+            "msg": "DC Delete Failed."
+        }
+    ]
+}`
+}

@@ -175,7 +175,39 @@ func DcUpdateHandler(out http.ResponseWriter, in *http.Request) {
 }
 
 func DcDeleteHandler(out http.ResponseWriter, in *http.Request) {
+	id := mux.Vars(in)["id"]
 	out.Header().Set("Content-Type", "application/json")
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("DC Delete Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
+		fmt.Fprintln(out, jsonbody)
+	} else {
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to an admin user
+		isAdmin := CheckTokenAdmin(token)
+		if isAdmin {
+			//now delete this dc from the table
+			MyFileInfo.Println("Attempting to delete dc:", id, "from the table.")
+			status := DeleteDc(dbArg, "dcdata", id)
+			MyFileInfo.Println("Status of the attempt to delete existing dcid:", id, "from the table was:", status)
+			if status == 1 {
+				out.WriteHeader(http.StatusOK) //200 status code
+				var jsonbody = staticMsgs[25]  //dc deletion msg
+				fmt.Fprintln(out, jsonbody)
+			} else {
+				out.WriteHeader(http.StatusInternalServerError) //500 status code
+				var jsonbody = staticMsgs[26]
+				fmt.Fprintln(out, jsonbody) //dc deletion failed msg
+			}
+		} else {
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
+			MyFileInfo.Println("Received unauthorized request on URI:/admin/dc/{id} PUT for dcid:", id)
+		}
+	}
+	MyFileInfo.Println("Received request on URI:/admin/dc/{id} DELETE")
 }
 
 func GetDcList(filePath string, tableName string, columnName string) []string {
@@ -239,6 +271,33 @@ func InsertDc(filePath string, tableName string, dcName string, dcAdmin string, 
 	}
 
 	return true
+}
+
+func DeleteDc(filePath string, tableName string, dcId string) int {
+	db, err := sql.Open("sqlite3", filePath)
+	if err != nil {
+		checkErr(err, 1, db)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	queryStmt := "DELETE FROM tablename WHERE did=val;"
+	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
+	queryStmt = strings.Replace(queryStmt, "val", dcId, 1)
+
+	MyFileInfo.Println("SQLite3 Query:", queryStmt)
+
+	_, err = db.Exec(queryStmt)
+	if err != nil {
+		MyFileWarning.Println("Caught error in dc-delete method.")
+		checkErr(err, 1, db)
+		return 0
+	}
+	return 1
 }
 
 func GetDcDetail(filePath string, tableName string, dcId string) []string {
