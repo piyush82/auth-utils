@@ -74,7 +74,7 @@ var (
 	MyFileInfo    *log.Logger
 	MyFileWarning *log.Logger
 	MyFileError   *log.Logger
-	staticMsgs    [25]string
+	staticMsgs    [27]string
 	cfg           Config
 	dbArg         string
 )
