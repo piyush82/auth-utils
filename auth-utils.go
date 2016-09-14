@@ -129,6 +129,7 @@ func main() {
 	dclist := r.Path("/admin/dc/").Subrouter()
 	dclist.Methods("GET").HandlerFunc(DcListHandler)
 	dclist.Methods("POST").HandlerFunc(DcCreateHandler)
+	dclist.Methods("DELETE").HandlerFunc(DcDeleteHandler)
 
 	dc := r.Path("/admin/dc/{id}").Subrouter()
 	dc.Methods("GET").HandlerFunc(DcDetailsHandler)
