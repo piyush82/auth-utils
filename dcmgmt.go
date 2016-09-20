@@ -47,21 +47,29 @@ func DcListHandler(out http.ResponseWriter, in *http.Request) {
 		//check if token is valid and belongs to an admin user
 		isAdmin := CheckTokenAdmin(token)
 		if isAdmin {
-			dcList := GetDcList(dbArg, "dcdata", "dcname")
+			dcNameList, dcIDList := GetDcList(dbArg, "dcdata", "dcname", "did")
 			var jsonbody = staticMsgs[19]
 			var buffer bytes.Buffer
-			for i := 0; i < len(dcList); i++ {
+			var buffer2 bytes.Buffer
+			for i := 0; i < len(dcNameList); i++ {
 				if i == 0 {
 					buffer.WriteString("\"")
-					buffer.WriteString(dcList[i])
+					buffer.WriteString(dcNameList[i])
 					buffer.WriteString("\"")
+					buffer2.WriteString("\"")
+					buffer2.WriteString(dcIDList[i])
+					buffer2.WriteString("\"")
 				} else {
 					buffer.WriteString(",\"")
-					buffer.WriteString(dcList[i])
+					buffer.WriteString(dcNameList[i])
 					buffer.WriteString("\"")
+					buffer2.WriteString(",\"")
+					buffer2.WriteString(dcIDList[i])
+					buffer2.WriteString("\"")
 				}
 			}
 			jsonbody = strings.Replace(jsonbody, "xxx", buffer.String(), 1)
+			jsonbody = strings.Replace(jsonbody, "yyy", buffer2.String(), 1)
 			out.WriteHeader(http.StatusOK) //200 status code
 			fmt.Fprintln(out, jsonbody)
 		} else {
@@ -210,7 +218,7 @@ func DcDeleteHandler(out http.ResponseWriter, in *http.Request) {
 	MyFileInfo.Println("Received request on URI:/admin/dc/{id} DELETE")
 }
 
-func GetDcList(filePath string, tableName string, columnName string) []string {
+func GetDcList(filePath string, tableName string, columnName1 string, columnName2 string) ([]string, []string) {
 	db, err := sql.Open("sqlite3", filePath)
 	if err != nil {
 		checkErr(err, 1, db)
@@ -222,9 +230,10 @@ func GetDcList(filePath string, tableName string, columnName string) []string {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
 
-	queryStmt := "SELECT column FROM tablename;"
+	queryStmt := "SELECT column1, column2 FROM tablename;"
 	queryStmt = strings.Replace(queryStmt, "tablename", tableName, 1)
-	queryStmt = strings.Replace(queryStmt, "column", columnName, 1)
+	queryStmt = strings.Replace(queryStmt, "column1", columnName1, 1)
+	queryStmt = strings.Replace(queryStmt, "column2", columnName2, 1)
 
 	MyFileInfo.Println("SQLite3 Query:", queryStmt)
 
@@ -235,13 +244,16 @@ func GetDcList(filePath string, tableName string, columnName string) []string {
 	}
 	defer rows.Close()
 	var dclist []string
+	var dcid []string
 	for rows.Next() {
 		var dcName string
-		err = rows.Scan(&dcName)
+		var dcID string
+		err = rows.Scan(&dcName, &dcID)
 		checkErr(err, 1, db)
 		dclist = append(dclist, dcName)
+		dcid = append(dcid, dcID)
 	}
-	return dclist
+	return dclist, dcid
 }
 
 func InsertDc(filePath string, tableName string, dcName string, dcAdmin string, password string, xtraInfo string) bool {

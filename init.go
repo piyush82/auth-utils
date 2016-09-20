@@ -82,8 +82,8 @@ func InitDB(filePath string) {
     			'username' VARCHAR(64) NULL,
     			'password' VARCHAR(64) NULL,
     			'isadmin' VARCHAR(1),
-				'capability' VARCHAR(128)
-				);
+			'capability' VARCHAR(128)
+			);
     		`
 		stmt, err := db.Prepare(dbCmd)
 		checkErr(err, 1, db)
@@ -95,7 +95,7 @@ func InitDB(filePath string) {
     			'uid' INTEGER,
     			'validupto' VARCHAR(64) NULL,
     			'capability' VARCHAR(128)
-				);
+			);
 			`
 		stmt, err = db.Prepare(dbCmd)
 		checkErr(err, 1, db)
@@ -103,11 +103,11 @@ func InitDB(filePath string) {
 		checkErr(err, 1, db)
 		dbCmd = `
     			CREATE TABLE 'service' (
-				'sid' INTEGER PRIMARY KEY AUTOINCREMENT,
+			'sid' INTEGER PRIMARY KEY AUTOINCREMENT,
     			'key' VARCHAR(128),
     			'shortname' VARCHAR(16) NULL,
     			'description' VARCHAR(128)
-				);
+			);
 			`
 		stmt, err = db.Prepare(dbCmd)
 		checkErr(err, 1, db)
@@ -115,12 +115,12 @@ func InitDB(filePath string) {
 		checkErr(err, 1, db)
 		dbCmd = `
     			CREATE TABLE 'dcdata' (
-				'did' INTEGER PRIMARY KEY AUTOINCREMENT,
+			'did' INTEGER PRIMARY KEY AUTOINCREMENT,
     			'dcname' VARCHAR(128),
     			'adminid' VARCHAR(16),
     			'password' VARCHAR(128),
-				'xtrainfo' VARCHAR(1024) NULL
-				);
+			'xtrainfo' VARCHAR(1024) NULL
+			);
 			`
 		stmt, err = db.Prepare(dbCmd)
 		checkErr(err, 1, db)

@@ -425,6 +425,10 @@ func InitMsgs() {
 	"dclist":
 	[
 		xxx
+	],
+	"dcid":
+	[
+		yyy
 	]
 }`
 
