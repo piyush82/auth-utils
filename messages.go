@@ -28,7 +28,8 @@ func InitMsgs() {
 	{
 		"metadata": 
 		{
-			"source": "T-Nova-AuthZ-Service"
+			"source": "T-Nova-AuthZ-Service",
+			"version": "1.0.0"
 		},
 		"info":
 		[
