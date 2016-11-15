@@ -100,16 +100,21 @@ func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 				MyFileInfo.Println("Received malformed request on URI:/admin/user/{id} PUT for uid:", id)
 			} else {
 				status := 0
-				if len(u.CapabilityList) == 0 {
-					//update just the admin-flag
+				if len(u.AdminFlag) != 0 {
+					//update the admin-flag
 					status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
-				} else if len(u.AdminFlag) == 0 {
-					//update just the capability list
+				}
+				if len(u.CapabilityList) != 0 {
+					//update the capability list
 					status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
-				} else {
-					//update both the fields
-					status = UpdateUser(dbArg, "user", "isadmin", u.AdminFlag, id)
-					status = UpdateUser(dbArg, "user", "capability", u.CapabilityList, id)
+				}
+				if len(u.Password) != 0 {
+					//update the Password
+					data := []byte(u.Password)
+					hash := sha1.Sum(data)
+					sha1hash := hex.EncodeToString(hash[:])
+					MyFileInfo.Println("SHA-1 Hash Generated for the new password:", sha1hash)
+					status = UpdateUser(dbArg, "user", "password", sha1hash, id)
 				}
 				var jsonbody = ""
 				if status == 1 {
