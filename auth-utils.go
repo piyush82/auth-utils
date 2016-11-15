@@ -113,6 +113,9 @@ func main() {
 	user.Methods("PUT").HandlerFunc(UserUpdateHandler)
 	user.Methods("DELETE").HandlerFunc(UserDeleteHandler)
 
+	password := r.Path("/password/{id}").Subrouter()
+	password.Methods("PUT").HandlerFunc(PasswordUpdateHandler)
+
 	auth := r.Path("/auth/{id}").Subrouter()
 	auth.Methods("GET").HandlerFunc(UserAuthHandler)
 

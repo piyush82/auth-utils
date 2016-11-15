@@ -72,6 +72,62 @@ func UserDetailsHandler(out http.ResponseWriter, in *http.Request) {
 	MyFileInfo.Println("Received request on URI:/admin/user/{id} GET for uid:", id)
 }
 
+func PasswordUpdateHandler(out http.ResponseWriter, in *http.Request) {
+	id := mux.Vars(in)["id"]
+	decoder := json.NewDecoder(in.Body)
+	var u user_struct
+	err := decoder.Decode(&u)
+	out.Header().Set("Content-Type", "application/json")
+
+	if len(in.Header["X-Auth-Token"]) == 0 {
+		MyFileWarning.Println("Password Update Module - Can't Proceed: Token Missing!")
+		out.WriteHeader(http.StatusBadRequest) //400 status code
+		var jsonbody = staticMsgs[5]
+		fmt.Fprintln(out, jsonbody)
+	} else {
+		token := in.Header["X-Auth-Token"][0]
+		//check if token is valid and belongs to the requesting user
+		isValid := simpleTokenValidation(token, id)
+		if isValid {
+			if err != nil {
+				out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+				var jsonbody = staticMsgs[1]
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received malformed request on URI:/password/{id} PUT for uid:", id)
+			} else if len(u.Password) == 0 {
+				out.WriteHeader(http.StatusBadRequest) //status 400 Bad Request
+				var jsonbody = staticMsgs[1]
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received malformed request on URI:/password/{id} PUT for uid:", id)
+			} else {
+				//update the Password
+				status := 0
+				data := []byte(u.Password)
+				hash := sha1.Sum(data)
+				sha1hash := hex.EncodeToString(hash[:])
+				MyFileInfo.Println("SHA-1 Hash Generated for the new password:", sha1hash)
+				status = UpdateUser(dbArg, "user", "password", sha1hash, id)
+
+				var jsonbody = ""
+				if status == 1 {
+					jsonbody = staticMsgs[16]
+					out.WriteHeader(http.StatusOK) //200 status code
+				} else {
+					jsonbody = staticMsgs[17]
+					out.WriteHeader(http.StatusNotModified) //304 status code
+				}
+				fmt.Fprintln(out, jsonbody)
+				MyFileInfo.Println("Received request on URI:/password/{id} PUT for uid:", id)
+			}
+		} else {
+			var jsonbody = staticMsgs[18]
+			out.WriteHeader(http.StatusUnauthorized) //401 status code
+			fmt.Fprintln(out, jsonbody)
+		}
+	}
+	MyFileInfo.Println("Received request on URI:/password/{id} GET for uid:", id)
+}
+
 func UserUpdateHandler(out http.ResponseWriter, in *http.Request) {
 	id := mux.Vars(in)["id"]
 	decoder := json.NewDecoder(in.Body)

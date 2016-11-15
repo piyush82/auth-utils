@@ -306,3 +306,22 @@ func CleanTokenDB(filePath string, tableName string) bool {
 
 	return true
 }
+
+func simpleTokenValidation(token string, userId string) bool {
+	//locate validity of token from db
+	MyFileInfo.Println("simpleTokenValidate: Incoming User-ID:", userId)
+	validity, uid := LocateTokenValidity(dbArg, "token", token)
+	x, _ := strconv.ParseInt(validity, 10, 64)
+	storedTime := time.Unix(x, 0)
+	MyFileInfo.Println("Result of search for token[", token, "] was: Unix-validity", storedTime.String(), "associated user-id:", uid)
+	//this matches the uid with the uid associated with the token in question
+	if time.Now().Before(storedTime) && strings.HasPrefix(userId, strconv.Itoa(uid)) && strings.HasSuffix(userId, strconv.Itoa(uid)) {
+		//token is valid
+		MyFileInfo.Println("Validation result for token: ", token, "was - valid.")
+		return true
+	} else {
+		//token is invalid
+		MyFileInfo.Println("Validation result for token: ", token, "was - invalid. Either expired or user-id mismatch.")
+		return false
+	}
+}
